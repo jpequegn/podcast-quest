@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface EpisodeContext {
@@ -54,6 +54,8 @@ export default function GameClient({ topic }: { topic: string }) {
   const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [evaluating, setEvaluating] = useState(false);
+  const [sessionSaved, setSessionSaved] = useState(false);
+  const gameStartedAt = useRef<string | null>(null);
 
   const currentQuestion = questions[currentIndex] ?? null;
 
@@ -72,6 +74,8 @@ export default function GameClient({ topic }: { topic: string }) {
       setQuestions(data.questions);
       setCurrentIndex(0);
       setAnswers([]);
+      setSessionSaved(false);
+      gameStartedAt.current = new Date().toISOString();
       setPhase("playing");
     } catch {
       alert("Failed to load questions. Please try again.");
@@ -124,18 +128,53 @@ export default function GameClient({ topic }: { topic: string }) {
     }
   }, [currentQuestion, selectedOption, openAnswer]);
 
+  const saveSession = useCallback(
+    async (finalAnswers: AnswerRecord[]) => {
+      if (sessionSaved) return;
+      const total = finalAnswers.reduce((sum, a) => sum + a.score, 0);
+      const avg = finalAnswers.length
+        ? Math.round(total / finalAnswers.length)
+        : 0;
+      try {
+        await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic,
+            questionCount: finalAnswers.length,
+            avgScore: avg,
+            totalScore: total,
+            answers: finalAnswers.map((a) => ({
+              questionId: a.questionId,
+              questionType: a.questionType,
+              score: a.score,
+              episodeTitle: a.episodeTitle,
+            })),
+            startedAt: gameStartedAt.current,
+          }),
+        });
+        setSessionSaved(true);
+      } catch {
+        // Non-critical — don't block the results screen
+      }
+    },
+    [topic, sessionSaved],
+  );
+
   const nextQuestion = useCallback(() => {
     setSelectedOption(null);
     setOpenAnswer("");
     setFeedbackData(null);
 
     if (currentIndex + 1 >= questions.length) {
+      // Save session with the current answers (which already include the last answer)
+      saveSession(answers);
       setPhase("finished");
     } else {
       setCurrentIndex((i) => i + 1);
       setPhase("playing");
     }
-  }, [currentIndex, questions.length]);
+  }, [currentIndex, questions.length, answers, saveSession]);
 
   const totalScore = answers.reduce((sum, a) => sum + a.score, 0);
   const avgScore = answers.length ? Math.round(totalScore / answers.length) : 0;
