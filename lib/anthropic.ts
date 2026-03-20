@@ -1,9 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
+let _anthropic: Anthropic | null = null;
 
-if (!apiKey) {
-  console.warn("ANTHROPIC_API_KEY not set — AI features will not work");
+export function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error("ANTHROPIC_API_KEY is not set");
+    }
+    _anthropic = new Anthropic({ apiKey });
+  }
+  return _anthropic;
 }
-
-export const anthropic = new Anthropic({ apiKey: apiKey ?? "" });

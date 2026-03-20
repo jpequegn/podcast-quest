@@ -1,4 +1,4 @@
-import { anthropic } from "./anthropic";
+import { getAnthropic } from "./anthropic";
 
 export interface EvaluationResult {
   score: number;
@@ -73,7 +73,7 @@ Respond in JSON only:
   "feedback": "<one sentence of constructive feedback>"
 }`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-haiku-4-5-20241022",
     max_tokens: 256,
     messages: [{ role: "user", content: prompt }],

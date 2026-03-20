@@ -1,4 +1,4 @@
-import { anthropic } from "./anthropic";
+import { getAnthropic } from "./anthropic";
 import type { Episode } from "./corpus";
 
 export type QuestionType =
@@ -116,7 +116,7 @@ export async function generateQuestion(
   const config = QUESTION_TYPE_CONFIG[type];
   const prompt = buildPrompt(type, episode, secondEpisode);
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-sonnet-4-6-20250514",
     max_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
