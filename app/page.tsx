@@ -50,6 +50,12 @@ export default function Home() {
           Test your knowledge from the P3 podcast corpus. Pick a topic and start
           the quiz.
         </p>
+        <Link
+          href="/stats"
+          className="mt-4 inline-block text-sm text-indigo-400 hover:text-indigo-300"
+        >
+          View your stats &rarr;
+        </Link>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">
