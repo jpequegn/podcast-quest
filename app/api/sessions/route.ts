@@ -3,8 +3,15 @@ import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { topic, questionCount, avgScore, totalScore, answers, startedAt } =
-    body;
+  const {
+    topic,
+    questionCount,
+    avgScore,
+    totalScore,
+    answers,
+    startedAt,
+    playerName,
+  } = body;
 
   if (!topic || !answers) {
     return NextResponse.json(
@@ -23,6 +30,7 @@ export async function POST(request: NextRequest) {
       answers,
       started_at: startedAt,
       completed_at: new Date().toISOString(),
+      player_name: playerName?.trim() || null,
     })
     .select("id")
     .single();
@@ -32,6 +40,29 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ id: data.id });
+}
+
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  const { id, playerName } = body;
+
+  if (!id || !playerName?.trim()) {
+    return NextResponse.json(
+      { error: "id and playerName are required" },
+      { status: 400 },
+    );
+  }
+
+  const { error } = await supabase
+    .from("game_sessions")
+    .update({ player_name: playerName.trim() })
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function GET(request: NextRequest) {

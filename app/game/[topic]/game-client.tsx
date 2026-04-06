@@ -56,6 +56,9 @@ export default function GameClient({ topic }: { topic: string }) {
   const [evaluating, setEvaluating] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
   const gameStartedAt = useRef<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [playerName, setPlayerName] = useState("");
+  const [nameSaved, setNameSaved] = useState(false);
 
   const currentQuestion = questions[currentIndex] ?? null;
 
@@ -136,7 +139,7 @@ export default function GameClient({ topic }: { topic: string }) {
         ? Math.round(total / finalAnswers.length)
         : 0;
       try {
-        await fetch("/api/sessions", {
+        const res = await fetch("/api/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -153,6 +156,8 @@ export default function GameClient({ topic }: { topic: string }) {
             startedAt: gameStartedAt.current,
           }),
         });
+        const data = await res.json();
+        setSessionId(data.id ?? null);
         setSessionSaved(true);
       } catch {
         // Non-critical — don't block the results screen
@@ -454,6 +459,57 @@ export default function GameClient({ topic }: { topic: string }) {
           </div>
         </div>
 
+        {/* Leaderboard name entry */}
+        {sessionId && !nameSaved && (
+          <div className="mb-8 rounded-xl border border-gray-800 bg-gray-900 p-6">
+            <h2 className="mb-2 text-lg font-semibold">Join the Leaderboard</h2>
+            <p className="mb-4 text-sm text-gray-400">
+              Add your name to appear on the leaderboard (optional).
+            </p>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Your name"
+                maxLength={30}
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-gray-100 placeholder-gray-600 focus:border-indigo-500 focus:outline-none"
+              />
+              <button
+                onClick={async () => {
+                  if (!playerName.trim()) return;
+                  await fetch("/api/sessions", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      id: sessionId,
+                      playerName: playerName.trim(),
+                    }),
+                  });
+                  setNameSaved(true);
+                }}
+                disabled={!playerName.trim()}
+                className="rounded-lg bg-indigo-600 px-5 py-2 font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        )}
+
+        {nameSaved && (
+          <div className="mb-8 rounded-xl border border-green-900/50 bg-green-950/20 p-4 text-sm text-green-400">
+            Name saved! Check out the{" "}
+            <button
+              onClick={() => router.push("/leaderboard")}
+              className="underline hover:text-green-300"
+            >
+              leaderboard
+            </button>
+            .
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3">
           <button
@@ -462,6 +518,9 @@ export default function GameClient({ topic }: { topic: string }) {
               setQuestions([]);
               setAnswers([]);
               setCurrentIndex(0);
+              setSessionId(null);
+              setPlayerName("");
+              setNameSaved(false);
             }}
             className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-indigo-500"
           >
@@ -472,6 +531,12 @@ export default function GameClient({ topic }: { topic: string }) {
             className="rounded-xl border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition-colors hover:border-gray-500"
           >
             Pick Another Topic
+          </button>
+          <button
+            onClick={() => router.push("/leaderboard")}
+            className="rounded-xl border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition-colors hover:border-gray-500"
+          >
+            Leaderboard
           </button>
         </div>
       </main>
