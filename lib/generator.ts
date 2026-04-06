@@ -1,3 +1,6 @@
+/**
+ * Question generation from podcast summaries using Anthropic SDK.
+ */
 import { getAnthropic } from "./anthropic";
 import type { Episode } from "./corpus";
 

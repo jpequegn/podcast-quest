@@ -1,3 +1,6 @@
+/**
+ * P3 data loader — loads podcast corpus from DuckDB export.
+ */
 import { supabase } from "./supabase";
 
 export interface Episode {

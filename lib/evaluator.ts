@@ -1,3 +1,6 @@
+/**
+ * Answer scoring using Anthropic SDK.
+ */
 import { getAnthropic } from "./anthropic";
 
 export interface EvaluationResult {
